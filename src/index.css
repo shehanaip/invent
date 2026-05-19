@@ -1,0 +1,27 @@
+body {
+  background: #000;
+  color: white;
+}
+.app-container { min-height:100vh; }
+.sidebar {
+  width:250px;
+  background:#111;
+}
+.logo,.text-orange { color:#ff7a00; }
+.nav-link {
+  color:white;
+  margin:10px 0;
+}
+.nav-link:hover,.nav-link.active { color:#ff7a00; }
+.card-box {
+  background:#111;
+  border:1px solid #ff7a00;
+  padding:25px;
+  border-radius:15px;
+  text-align:center;
+}
+.card-box i {
+  font-size:30px;
+  color:#ff7a00;
+}
+.card-box h4 { margin-top:15px; }
