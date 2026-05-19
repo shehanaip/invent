@@ -18,7 +18,7 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://invent-navy.vercel.app/"
+      "https://invent-navy.vercel.app"
       
     ],
     credentials: true
