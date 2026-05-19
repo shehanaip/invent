@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../auth.css";
 
-const API = "https://invent-yfwy.onrender.com/";
+const API = "https://invent-yfwy.onrender.com";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
