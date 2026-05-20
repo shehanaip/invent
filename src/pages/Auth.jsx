@@ -119,7 +119,7 @@ export default function Auth() {
         </div>
 
         <div className="glow glow-1"></div>
-        <div className="glow glow-2"></div>
+        
       </div>
 
       {/* RIGHT SIDE */}
@@ -182,11 +182,11 @@ export default function Auth() {
           >
             {isLogin ? (
               <>
-                <i className="fas fa-sign-in-alt"></i> Login
+          
               </>
             ) : (
               <>
-                <i className="fas fa-user-plus"></i> Register
+               
               </>
             )}
           </button>
@@ -204,7 +204,7 @@ export default function Auth() {
           >
             <i className="fab fa-google"></i>
 
-            Continue with Google
+             Continue with Google
           </button>
 
           {/* TOGGLE */}
