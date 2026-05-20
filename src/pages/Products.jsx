@@ -287,7 +287,7 @@ pricePerUnit: p.pricePerUnit || "",
                   <td>
                     {p.images?.length > 0 && (
                       <img
-                        src={`http://localhost:5000/uploads/${p.images[0]}`}
+                        src={`https://invent-yfwy.onrender.com/uploads/${p.images[0]}`}
                         width="50"
                       />
                     )}
