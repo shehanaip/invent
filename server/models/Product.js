@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
-    // 🔐 IMPORTANT: ownership (multi-user support)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -22,9 +21,38 @@ const productSchema = new mongoose.Schema(
     subCategory: String,
     childCategory: String,
 
+    // ✅ NEW
+    barcode: String,
+
+    // ✅ NEW
+    qrEnabled: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ✅ NEW
+    tax: {
+      type: Number,
+      default: 0,
+    },
+
+    // ✅ NEW
+    currency: {
+      type: String,
+      default: "BDT",
+    },
+
     unitType: {
       type: String,
-      enum: ["piece", "kg", "gram", "liter", "ml", "box", "packet"],
+      enum: [
+        "piece",
+        "kg",
+        "gram",
+        "liter",
+        "ml",
+        "box",
+        "packet",
+      ],
       default: "piece",
     },
 
@@ -62,7 +90,9 @@ const productSchema = new mongoose.Schema(
       default: "Available",
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model("Product", productSchema);
