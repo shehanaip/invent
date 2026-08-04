@@ -3,20 +3,16 @@ import Sidebar from "../components/Sidebar";
 import API from "../api";
 
 
-export default function Tracking({
-  dark,
-  setDark,
-  logout
-}) {
+export default function Tracking({ dark, setDark, logout }) {
 
 
-  const [menuOpen,setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const [shipments,setShipments] = useState([]);
+  const [shipments, setShipments] = useState([]);
 
-  const [loading,setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [search,setSearch] = useState("");
+  const [search, setSearch] = useState("");
 
 
   const token = localStorage.getItem("token");
@@ -24,53 +20,48 @@ export default function Tracking({
 
 
 
+
   // ================= FETCH =================
 
 
-  const fetchShipments = async()=>{
+  const fetchShipments = async () => {
 
 
-    try{
+    try {
 
 
-      const res = await API.get(
-        "/shipments",
-        {
-          headers:{
-            Authorization:
-            `Bearer ${token}`
-          }
-        }
-      );
+      const res = await API.get("/shipments", {
+
+        headers: {
+
+          Authorization: `Bearer ${token}`
+
+        },
+
+      });
 
 
-      console.log(
-        "SHIPMENTS:",
-        res.data
-      );
+      console.log("SHIPMENTS:", res.data);
 
 
-      setShipments(
-        res.data || []
-      );
+      setShipments(res.data || []);
 
 
-    }
-    catch(err){
+
+    } catch (err) {
 
 
       console.log(
         "TRACKING ERROR:",
-        err.response?.data ||
-        err.message
+        err.response?.data || err.message
       );
 
 
       setShipments([]);
 
 
-    }
-    finally{
+
+    } finally {
 
 
       setLoading(false);
@@ -85,13 +76,13 @@ export default function Tracking({
 
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
 
     fetchShipments();
 
 
-  },[]);
+  }, []);
 
 
 
@@ -99,65 +90,105 @@ export default function Tracking({
 
 
 
-  // ================= SEARCH =================
+
+  // ================= FILTER =================
 
 
-  const filtered =
-  shipments.filter((s)=>{
+  const filtered = shipments.filter((s)=>{
 
 
-    const text =
-    search.toLowerCase();
+    const text = search.toLowerCase();
 
 
+    return (
 
-    return(
-
-      (
-        s.productId?.name ||
-        ""
-      )
-      .toLowerCase()
-      .includes(text)
+      (s.productId?.name || "")
+        .toLowerCase()
+        .includes(text)
 
 
       ||
 
-      (
-        s.trackingNumber ||
-        ""
-      )
-      .toLowerCase()
-      .includes(text)
-
+      (s.trackingNumber || "")
+        .toLowerCase()
+        .includes(text)
 
 
       ||
 
-      (
-        s.location ||
-        ""
-      )
-      .toLowerCase()
-      .includes(text)
-
+      (s.location || "")
+        .toLowerCase()
+        .includes(text)
 
 
       ||
 
-      (
-        s.status ||
-        ""
-      )
-      .toLowerCase()
-      .includes(text)
-
-
+      (s.status || "")
+        .toLowerCase()
+        .includes(text)
 
     );
 
 
   });
+
+
+
+
+
+
+
+
+  // ================= STATUS ICON =================
+
+
+  const getStatusIcon = (status)=>{
+
+
+    switch(status){
+
+
+      case "Delivered":
+
+        return (
+          <i
+            className="fas fa-check-circle"
+          />
+        );
+
+
+      case "In Transit":
+
+        return (
+          <i
+            className="fas fa-truck"
+          />
+        );
+
+
+      case "Cancelled":
+
+        return (
+          <i
+            className="fas fa-times-circle"
+          />
+        );
+
+
+      default:
+
+        return (
+          <i
+            className="fas fa-clock"
+          />
+        );
+
+
+    }
+
+
+  };
+
 
 
 
@@ -194,92 +225,28 @@ export default function Tracking({
 
 
 
-
-  // ================= ICON =================
-
-
-  const getStatusIcon=(status)=>{
-
-
-    switch(status){
-
-
-      case "Delivered":
-
-        return(
-          <i className="fas fa-check-circle"/>
-        );
-
-
-
-      case "In Transit":
-
-        return(
-          <i className="fas fa-truck"/>
-        );
-
-
-
-      case "Cancelled":
-
-        return(
-          <i className="fas fa-times-circle"/>
-        );
-
-
-
-      default:
-
-        return(
-          <i className="fas fa-clock"/>
-        );
-
-
-    }
-
-
-  };
-
-
-
-
-
-
-
   // ================= PROGRESS =================
 
 
   const getProgress=(status)=>{
 
 
-    switch(status){
+    if(status==="Delivered")
+      return 100;
 
 
-      case "Delivered":
-        return 100;
+    if(status==="In Transit")
+      return 65;
 
 
-      case "In Transit":
-        return 65;
+    if(status==="Pending")
+      return 25;
 
 
-      case "Pending":
-        return 25;
-
-
-      case "Cancelled":
-        return 0;
-
-
-      default:
-        return 0;
-
-
-    }
+    return 0;
 
 
   };
-
 
 
 
@@ -294,7 +261,7 @@ export default function Tracking({
   shipments.length;
 
 
-  const transit =
+  const inTransit =
   shipments.filter(
     s=>s.status==="In Transit"
   ).length;
@@ -316,7 +283,7 @@ export default function Tracking({
   if(loading){
 
 
-    return(
+    return (
 
       <div className="loader-screen">
 
@@ -347,30 +314,24 @@ export default function Tracking({
 
 
 
-
-  return(
-
+  return (
 
     <div
-      className={
-        `app-container ${
-          dark ? "dark":"light"
-        }`
-      }
+      className={`app-container ${
+        dark ? "dark":"light"
+      }`}
     >
 
 
 
 
+      {/* HAMBURGER */}
 
       <button
 
-        className={
-          `hamburger ${
-            menuOpen ? "open":""
-          }`
-        }
-
+        className={`hamburger ${
+          menuOpen ? "open":""
+        }`}
 
         onClick={()=>
           setMenuOpen(!menuOpen)
@@ -387,6 +348,10 @@ export default function Tracking({
 
 
 
+
+
+
+      {/* SIDEBAR */}
 
 
       <Sidebar
@@ -409,8 +374,8 @@ export default function Tracking({
 
 
 
-      <main className="main-content">
 
+      <main className="main-content">
 
 
 
@@ -442,13 +407,10 @@ export default function Tracking({
             value={search}
 
             onChange={(e)=>
-              setSearch(
-                e.target.value
-              )
+              setSearch(e.target.value)
             }
 
           />
-
 
 
         </div>
@@ -459,6 +421,8 @@ export default function Tracking({
 
 
 
+
+        {/* STATS */}
 
 
         <div className="stats-grid">
@@ -483,14 +447,16 @@ export default function Tracking({
 
 
 
-
           <div className="stat-card">
+
 
             <i className="fas fa-truck"></i>
 
+
             <h2>
-              {transit}
+              {inTransit}
             </h2>
+
 
             <p>
               In Transit
@@ -533,6 +499,8 @@ export default function Tracking({
 
 
 
+        {/* TRACKING LIST */}
+
 
         <div className="table-card">
 
@@ -544,6 +512,7 @@ export default function Tracking({
             {" "}
 
             Shipment Tracking
+
 
           </h3>
 
@@ -566,6 +535,7 @@ export default function Tracking({
           )
 
 
+
           :
 
 
@@ -573,11 +543,32 @@ export default function Tracking({
           filtered.map((s)=>(
 
 
+
             <div
 
               key={s._id}
 
-              className="tracking-card"
+              style={{
+
+                padding:"18px",
+
+                borderRadius:"16px",
+
+                background: dark
+                ?
+                "rgba(255,255,255,0.04)"
+                :
+                "#fff",
+
+                border:
+                "1px solid rgba(255,255,255,0.08)",
+
+                boxShadow:
+                "0 8px 24px rgba(0,0,0,0.08)",
+
+                marginBottom:"18px"
+
+              }}
 
             >
 
@@ -587,24 +578,42 @@ export default function Tracking({
 
 
 
-              <div className="tracking-header">
+              {/* HEADER */}
 
+
+              <div
+
+                style={{
+
+                  display:"flex",
+
+                  justifyContent:"space-between",
+
+                  marginBottom:"12px"
+
+                }}
+
+              >
 
 
                 <h4>
 
+
                   <i className="fas fa-barcode"></i>
+
 
                   {" "}
 
+
                   {
+
                     s.trackingNumber ||
-                    "No Tracking ID"
+                    s._id
+
                   }
 
 
                 </h4>
-
 
 
 
@@ -619,7 +628,13 @@ export default function Tracking({
                       s.status
                     ),
 
-                    fontWeight:"700"
+                    fontWeight:"700",
+
+                    display:"flex",
+
+                    alignItems:"center",
+
+                    gap:"8px"
 
                   }}
 
@@ -633,13 +648,10 @@ export default function Tracking({
                   }
 
 
-                  {" "}
-
                   {s.status}
 
 
                 </span>
-
 
 
               </div>
@@ -649,6 +661,10 @@ export default function Tracking({
 
 
 
+
+
+
+              {/* PRODUCT */}
 
 
               <p>
@@ -677,6 +693,11 @@ export default function Tracking({
 
 
 
+
+
+              {/* USER */}
+
+
               <p>
 
                 <i className="fas fa-user"></i>
@@ -684,7 +705,7 @@ export default function Tracking({
                 {" "}
 
                 <b>
-                  User:
+                  Customer:
                 </b>
 
                 {" "}
@@ -702,6 +723,10 @@ export default function Tracking({
 
 
 
+
+
+
+              {/* LOCATION */}
 
 
               <p>
@@ -725,14 +750,30 @@ export default function Tracking({
 
 
 
+
+              {/* PROGRESS BAR */}
+
+
               <div
-                className="progress-container"
+
+                style={{
+
+                  height:"14px",
+
+                  background:"#1e293b",
+
+                  borderRadius:"30px",
+
+                  overflow:"hidden",
+
+                  marginTop:"15px"
+
+                }}
+
               >
 
 
                 <div
-
-                  className="progress-bar"
 
                   style={{
 
@@ -741,16 +782,21 @@ export default function Tracking({
                       s.status
                     )}%`,
 
+                    height:"100%",
 
                     background:
                     getStatusColor(
                       s.status
-                    )
+                    ),
+
+                    borderRadius:"30px",
+
+                    transition:
+                    "width 1.5s ease"
 
                   }}
 
-                ></div>
-
+                />
 
 
               </div>
@@ -762,8 +808,23 @@ export default function Tracking({
 
 
 
+              {/* STEPS */}
+
+
               <div
-                className="tracking-steps"
+
+                style={{
+
+                  display:"flex",
+
+                  justifyContent:"space-between",
+
+                  marginTop:"10px",
+
+                  fontSize:"12px"
+
+                }}
+
               >
 
                 <span>
@@ -796,9 +857,12 @@ export default function Tracking({
 
               <small>
 
+
                 Progress:
 
+
                 {" "}
+
 
                 {
                   getProgress(
@@ -806,15 +870,15 @@ export default function Tracking({
                   )
                 }%
 
+
               </small>
 
 
 
 
 
-
-
             </div>
+
 
 
           ))
@@ -824,14 +888,13 @@ export default function Tracking({
 
 
 
+
         </div>
 
 
 
 
-
       </main>
-
 
 
 
