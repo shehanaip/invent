@@ -2,92 +2,160 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import API from "../api";
 
-export default function Tracking({ dark, setDark, logout }) {
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [shipments, setShipments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+export default function Tracking({
+  dark,
+  setDark,
+  logout
+}) {
+
+
+  const [menuOpen,setMenuOpen] = useState(false);
+
+  const [shipments,setShipments] = useState([]);
+
+  const [loading,setLoading] = useState(true);
+
+  const [search,setSearch] = useState("");
+
 
   const token = localStorage.getItem("token");
 
 
-  // ================= FETCH SHIPMENTS =================
-
-  const fetchShipments = async () => {
-
-    try {
-
-      const res = await API.get("/shipments", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
 
-      setShipments(res.data || []);
+  // ================= FETCH =================
 
 
-    } catch (err) {
+  const fetchShipments = async()=>{
+
+
+    try{
+
+
+      const res = await API.get(
+        "/shipments",
+        {
+          headers:{
+            Authorization:
+            `Bearer ${token}`
+          }
+        }
+      );
+
+
+      console.log(
+        "SHIPMENTS:",
+        res.data
+      );
+
+
+      setShipments(
+        res.data || []
+      );
+
+
+    }
+    catch(err){
+
 
       console.log(
         "TRACKING ERROR:",
-        err.response?.data || err.message
+        err.response?.data ||
+        err.message
       );
+
 
       setShipments([]);
 
-    } finally {
+
+    }
+    finally{
+
 
       setLoading(false);
 
+
     }
+
 
   };
 
 
 
-  useEffect(() => {
+
+
+  useEffect(()=>{
+
 
     fetchShipments();
 
-  }, []);
+
+  },[]);
+
+
+
 
 
 
 
   // ================= SEARCH =================
 
-  const filtered = shipments.filter((s) => {
 
-    const text = search.toLowerCase();
+  const filtered =
+  shipments.filter((s)=>{
 
 
-    return (
+    const text =
+    search.toLowerCase();
 
-      (s.productId?.name || "")
-        .toLowerCase()
-        .includes(text)
 
-      ||
 
-      (s.trackingNumber || "")
-        .toLowerCase()
-        .includes(text)
+    return(
 
-      ||
+      (
+        s.productId?.name ||
+        ""
+      )
+      .toLowerCase()
+      .includes(text)
 
-      (s.location || "")
-        .toLowerCase()
-        .includes(text)
 
       ||
 
-      (s.status || "")
-        .toLowerCase()
-        .includes(text)
+      (
+        s.trackingNumber ||
+        ""
+      )
+      .toLowerCase()
+      .includes(text)
+
+
+
+      ||
+
+      (
+        s.location ||
+        ""
+      )
+      .toLowerCase()
+      .includes(text)
+
+
+
+      ||
+
+      (
+        s.status ||
+        ""
+      )
+      .toLowerCase()
+      .includes(text)
+
+
 
     );
+
 
   });
 
@@ -95,28 +163,28 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
+
+
   // ================= STATUS COLOR =================
 
-  const getStatusColor = (status) => {
 
-    switch(status) {
+  const getStatusColor=(status)=>{
 
-      case "Delivered":
-        return "#22c55e";
 
-      case "In Transit":
-        return "#2563eb";
+    if(status==="Delivered")
+      return "#22c55e";
 
-      case "Cancelled":
-        return "#ef4444";
 
-      case "Pending":
-        return "#f59e0b";
+    if(status==="In Transit")
+      return "#f59e0b";
 
-      default:
-        return "#999";
 
-    }
+    if(status==="Cancelled")
+      return "#ef4444";
+
+
+    return "#2563eb";
+
 
   };
 
@@ -124,42 +192,55 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
-  // ================= STATUS ICON =================
 
-  const getStatusIcon = (status) => {
 
-    switch(status) {
+
+  // ================= ICON =================
+
+
+  const getStatusIcon=(status)=>{
+
+
+    switch(status){
+
 
       case "Delivered":
 
-        return (
-          <i className="fas fa-check-circle"></i>
+        return(
+          <i className="fas fa-check-circle"/>
         );
+
 
 
       case "In Transit":
 
-        return (
-          <i className="fas fa-truck"></i>
+        return(
+          <i className="fas fa-truck"/>
         );
+
 
 
       case "Cancelled":
 
-        return (
-          <i className="fas fa-times-circle"></i>
+        return(
+          <i className="fas fa-times-circle"/>
         );
+
 
 
       default:
 
-        return (
-          <i className="fas fa-clock"></i>
+        return(
+          <i className="fas fa-clock"/>
         );
+
 
     }
 
+
   };
+
+
 
 
 
@@ -167,26 +248,35 @@ export default function Tracking({ dark, setDark, logout }) {
 
   // ================= PROGRESS =================
 
-  const getProgress = (status) => {
 
-    switch(status) {
+  const getProgress=(status)=>{
+
+
+    switch(status){
+
 
       case "Delivered":
         return 100;
 
+
       case "In Transit":
         return 65;
+
 
       case "Pending":
         return 25;
 
+
       case "Cancelled":
         return 0;
+
 
       default:
         return 0;
 
+
     }
+
 
   };
 
@@ -194,30 +284,39 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
+
+
+
   // ================= STATS =================
 
-  const total = shipments.length;
 
-  const inTransit =
-    shipments.filter(
-      s => s.status === "In Transit"
-    ).length;
+  const total =
+  shipments.length;
+
+
+  const transit =
+  shipments.filter(
+    s=>s.status==="In Transit"
+  ).length;
+
 
 
   const delivered =
-    shipments.filter(
-      s => s.status === "Delivered"
-    ).length;
+  shipments.filter(
+    s=>s.status==="Delivered"
+  ).length;
 
 
 
 
 
-  // ================= LOADING =================
 
-  if (loading) {
 
-    return (
+
+  if(loading){
+
+
+    return(
 
       <div className="loader-screen">
 
@@ -229,13 +328,16 @@ export default function Tracking({ dark, setDark, logout }) {
 
         </div>
 
+
         <h1>
           TRACKING
         </h1>
 
+
       </div>
 
     );
+
 
   }
 
@@ -243,25 +345,37 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
-  return (
+
+
+
+  return(
+
 
     <div
-      className={`app-container ${
-        dark ? "dark" : "light"
-      }`}
+      className={
+        `app-container ${
+          dark ? "dark":"light"
+        }`
+      }
     >
 
 
 
-      {/* HAMBURGER */}
+
 
       <button
-        className={`hamburger ${
-          menuOpen ? "open" : ""
-        }`}
-        onClick={() =>
+
+        className={
+          `hamburger ${
+            menuOpen ? "open":""
+          }`
+        }
+
+
+        onClick={()=>
           setMenuOpen(!menuOpen)
         }
+
       >
 
         <span></span>
@@ -274,7 +388,6 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
-      {/* SIDEBAR */}
 
       <Sidebar
 
@@ -295,11 +408,13 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
+
       <main className="main-content">
 
 
 
-        {/* TOPBAR */}
+
+
 
         <div className="topbar">
 
@@ -312,7 +427,9 @@ export default function Tracking({ dark, setDark, logout }) {
 
             Live Tracking
 
+
           </h1>
+
 
 
 
@@ -320,15 +437,18 @@ export default function Tracking({ dark, setDark, logout }) {
 
             className="search-input"
 
-            placeholder="Search product or tracking..."
+            placeholder="Search shipment..."
 
             value={search}
 
             onChange={(e)=>
-              setSearch(e.target.value)
+              setSearch(
+                e.target.value
+              )
             }
 
           />
+
 
 
         </div>
@@ -338,7 +458,8 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
-        {/* STATS */}
+
+
 
         <div className="stats-grid">
 
@@ -355,7 +476,10 @@ export default function Tracking({ dark, setDark, logout }) {
               Total Shipments
             </p>
 
+
           </div>
+
+
 
 
 
@@ -365,14 +489,16 @@ export default function Tracking({ dark, setDark, logout }) {
             <i className="fas fa-truck"></i>
 
             <h2>
-              {inTransit}
+              {transit}
             </h2>
 
             <p>
               In Transit
             </p>
 
+
           </div>
+
 
 
 
@@ -380,17 +506,22 @@ export default function Tracking({ dark, setDark, logout }) {
 
           <div className="stat-card">
 
+
             <i className="fas fa-check-circle"></i>
+
 
             <h2>
               {delivered}
             </h2>
 
+
             <p>
               Delivered
             </p>
 
+
           </div>
+
 
 
         </div>
@@ -400,7 +531,8 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
-        {/* TRACKING LIST */}
+
+
 
         <div className="table-card">
 
@@ -419,195 +551,276 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
+
+
           {
-            filtered.length === 0 ?
+          filtered.length===0 ?
 
 
-            (
+          (
 
-              <p>
-                No shipments found
-              </p>
+            <p>
+              No shipments found
+            </p>
 
-            )
-
-
-            :
+          )
 
 
-            filtered.map((s)=>(
-
-
-              <div
-                key={s._id}
-                className="tracking-card"
-              >
+          :
 
 
 
-
-                <div className="tracking-header">
-
-
-                  <h4>
-
-                    <i className="fas fa-barcode"></i>
-
-                    {" "}
-
-                    {
-                      s.trackingNumber ||
-                      s._id
-                    }
-
-                  </h4>
+          filtered.map((s)=>(
 
 
+            <div
 
+              key={s._id}
 
-                  <span
-                    style={{
-                      color:
-                      getStatusColor(
-                        s.status
-                      ),
-                      fontWeight:"700"
-                    }}
-                  >
+              className="tracking-card"
 
-                    {
-                      getStatusIcon(
-                        s.status
-                      )
-                    }
-
-                    {" "}
-
-                    {s.status}
-
-                  </span>
-
-
-                </div>
+            >
 
 
 
 
 
 
-                <p>
 
-                  <i className="fas fa-box"></i>
+              <div className="tracking-header">
+
+
+
+                <h4>
+
+                  <i className="fas fa-barcode"></i>
 
                   {" "}
 
                   {
-                    s.productId?.name ||
-                    "Unknown Product"
+                    s.trackingNumber ||
+                    "No Tracking ID"
                   }
 
-                </p>
+
+                </h4>
 
 
 
 
 
-                <p>
 
-                  <i className="fas fa-location-dot"></i>
+                <span
 
-                  {" "}
+                  style={{
+
+                    color:
+                    getStatusColor(
+                      s.status
+                    ),
+
+                    fontWeight:"700"
+
+                  }}
+
+                >
+
 
                   {
-                    s.location ||
-                    "No Location"
-                  }
-
-                </p>
-
-
-
-
-
-
-                {/* PROGRESS BAR */}
-
-                <div className="progress-container">
-
-
-                  <div
-
-                    className="progress-bar"
-
-                    style={{
-                      width:
-                      `${getProgress(
-                        s.status
-                      )}%`,
-
-                      background:
-                      getStatusColor(
-                        s.status
-                      )
-                    }}
-
-                  ></div>
-
-
-                </div>
-
-
-
-
-
-
-                <div className="tracking-steps">
-
-                  <span>
-                    Ordered
-                  </span>
-
-                  <span>
-                    Packed
-                  </span>
-
-                  <span>
-                    Transit
-                  </span>
-
-                  <span>
-                    Delivered
-                  </span>
-
-                </div>
-
-
-
-
-
-
-                <small>
-
-                  Progress:
-
-                  {" "}
-
-                  {
-                    getProgress(
+                    getStatusIcon(
                       s.status
                     )
-                  }%
+                  }
 
-                </small>
+
+                  {" "}
+
+                  {s.status}
+
+
+                </span>
 
 
 
               </div>
 
 
-            ))
+
+
+
+
+
+
+              <p>
+
+                <i className="fas fa-box"></i>
+
+                {" "}
+
+                <b>
+                  Product:
+                </b>
+
+                {" "}
+
+                {
+                  s.productId?.name ||
+                  "Unknown Product"
+                }
+
+
+              </p>
+
+
+
+
+
+
+
+              <p>
+
+                <i className="fas fa-user"></i>
+
+                {" "}
+
+                <b>
+                  User:
+                </b>
+
+                {" "}
+
+                {
+                  s.userId?.name ||
+                  s.user?.name ||
+                  "Unknown User"
+                }
+
+
+              </p>
+
+
+
+
+
+
+
+              <p>
+
+                <i className="fas fa-location-dot"></i>
+
+                {" "}
+
+                {
+                  s.location ||
+                  "No Location"
+                }
+
+
+              </p>
+
+
+
+
+
+
+
+
+              <div
+                className="progress-container"
+              >
+
+
+                <div
+
+                  className="progress-bar"
+
+                  style={{
+
+                    width:
+                    `${getProgress(
+                      s.status
+                    )}%`,
+
+
+                    background:
+                    getStatusColor(
+                      s.status
+                    )
+
+                  }}
+
+                ></div>
+
+
+
+              </div>
+
+
+
+
+
+
+
+
+              <div
+                className="tracking-steps"
+              >
+
+                <span>
+                  Ordered
+                </span>
+
+
+                <span>
+                  Packed
+                </span>
+
+
+                <span>
+                  Transit
+                </span>
+
+
+                <span>
+                  Delivered
+                </span>
+
+
+              </div>
+
+
+
+
+
+
+
+              <small>
+
+                Progress:
+
+                {" "}
+
+                {
+                  getProgress(
+                    s.status
+                  )
+                }%
+
+              </small>
+
+
+
+
+
+
+
+            </div>
+
+
+          ))
 
           }
+
 
 
 
@@ -616,12 +829,16 @@ export default function Tracking({ dark, setDark, logout }) {
 
 
 
+
       </main>
+
 
 
 
     </div>
 
+
   );
+
 
 }
