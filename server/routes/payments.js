@@ -8,7 +8,7 @@ const auth = require("../middleware/auth");
 // =====================================================
 const SSL = {
   store_id: process.env.SSL_STORE_ID || "aip6a81ff04515e2",
-  store_passwd: process.env.SSL_STORE_PASSWD || "aa20da940da51493088240842cbd04aa",
+  store_passwd: process.env.SSL_STORE_PASSWD || "aip6a81ff04515e2@ssl",
   init_url:
     process.env.SSL_INIT_URL ||
     "https://sandbox.sslcommerz.com/gwprocess/v4/api.php",
