@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
 import {
@@ -18,6 +18,7 @@ export default function Orders({ dark, setDark }) {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -25,16 +26,16 @@ export default function Orders({ dark, setDark }) {
 
   const token = localStorage.getItem("token");
 
- const [form, setForm] = useState({
-  customer: "",
-  email: "",
-  phone: "",
-  productId: "",
-  quantity: "",
-  status: "Pending",
-  payment: "Unpaid",
-  total: "",
-});
+  const [form, setForm] = useState({
+    customer: "",
+    email: "",
+    phone: "",
+    productId: "",
+    quantity: "",
+    status: "Pending",
+    payment: "Unpaid",
+    total: "",
+  });
 
   // ================= FETCH =================
   const fetchProducts = async () => {
@@ -67,58 +68,83 @@ export default function Orders({ dark, setDark }) {
     fetchProducts();
   }, []);
 
+  // ================= SEARCH (same idea as Products) =================
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orders;
+
+    return orders.filter((o) => {
+      const customer = (
+        o.customer?.name ||
+        o.customer ||
+        ""
+      )
+        .toString()
+        .toLowerCase();
+      const product = (o.productId?.name || "").toString().toLowerCase();
+      const status = (o.status || "").toString().toLowerCase();
+      const payment = (o.payment || "").toString().toLowerCase();
+      const email = (o.email || "").toString().toLowerCase();
+      const phone = (o.phone || "").toString().toLowerCase();
+      const total = String(o.total || "");
+
+      return (
+        customer.includes(q) ||
+        product.includes(q) ||
+        status.includes(q) ||
+        payment.includes(q) ||
+        email.includes(q) ||
+        phone.includes(q) ||
+        total.includes(q)
+      );
+    });
+  }, [orders, search]);
+
   // ================= HANDLE INPUT =================
-const handleChange = (e) => {
-  const { name, value } = e.target;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let updated = { ...form, [name]: value };
 
-  let updated = { ...form, [name]: value };
-
-  if (name === "productId" || name === "quantity") {
-    const product = products.find(
-      p => p._id === updated.productId
-    );
-
-    if (product && updated.quantity) {
-      updated.total = product.pricePerUnit * Number(updated.quantity);
+    if (name === "productId" || name === "quantity") {
+      const product = products.find((p) => p._id === updated.productId);
+      if (product && updated.quantity) {
+        updated.total = product.pricePerUnit * Number(updated.quantity);
+      }
     }
-  }
 
-  setForm(updated);
-};
+    setForm(updated);
+  };
 
   // ================= RESET =================
   const resetForm = () => {
     setForm({
       customer: "",
+      email: "",
+      phone: "",
       productId: "",
       quantity: "",
       status: "Pending",
       payment: "Unpaid",
       total: "",
     });
-
     setEditMode(false);
     setEditId(null);
     setShowModal(false);
   };
 
   // ================= ADD =================
- const addOrder = async () => {
-  try {
-    await API.post("/orders", form, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    resetForm();
-    fetchOrders();
-
-    // 🔥 refresh customers page (if open / listening)
-    window.dispatchEvent(new Event("refresh-customers"));
-
-  } catch (err) {
-    console.log(err);
-  }
-};
+  const addOrder = async () => {
+    try {
+      await API.post("/orders", form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      resetForm();
+      fetchOrders();
+      window.dispatchEvent(new Event("refresh-customers"));
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   // ================= UPDATE =================
   const updateOrder = async () => {
@@ -126,7 +152,6 @@ const handleChange = (e) => {
       await API.put(`/orders/${editId}`, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       resetForm();
       fetchOrders();
     } catch (err) {
@@ -140,7 +165,6 @@ const handleChange = (e) => {
       await API.delete(`/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       fetchOrders();
     } catch (err) {
       console.log(err);
@@ -152,17 +176,16 @@ const handleChange = (e) => {
     setEditMode(true);
     setShowModal(true);
     setEditId(o._id);
-
     setForm({
-  customer: o.customer || "",
-  email: o.email || "",
-  phone: o.phone || "",
-  productId: o.productId?._id || o.productId,
-  quantity: o.quantity || "",
-  status: o.status || "Pending",
-  payment: o.payment || "Unpaid",
-  total: o.total || "",
-});
+      customer: o.customer || "",
+      email: o.email || "",
+      phone: o.phone || "",
+      productId: o.productId?._id || o.productId,
+      quantity: o.quantity || "",
+      status: o.status || "Pending",
+      payment: o.payment || "Unpaid",
+      total: o.total || "",
+    });
   };
 
   if (loading) {
@@ -178,92 +201,51 @@ const handleChange = (e) => {
     );
   }
 
-  const pendingOrders = orders.filter(o => o.status === "Pending").length;
-  const completedOrders = orders.filter(o => o.status === "Completed").length;
+  const pendingOrders = orders.filter((o) => o.status === "Pending").length;
+  const completedOrders = orders.filter(
+    (o) => o.status === "Completed"
+  ).length;
 
   const revenue = orders
-    .filter(o => o.status === "Completed")
+    .filter((o) => o.status === "Completed")
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
+  // ================= PRINT BILL =================
+  const printInvoice = (order) => {
+    const product = products.find(
+      (p) => p._id === (order.productId?._id || order.productId)
+    );
 
-// ================= PRINT BILL =================
-const printInvoice = (order) => {
-  const product = products.find(
-    (p) => p._id === (order.productId?._id || order.productId)
-  );
-
-  const printWindow = window.open("", "", "width=900,height=700");
-
-  printWindow.document.write(`
+    const printWindow = window.open("", "", "width=900,height=700");
+    printWindow.document.write(`
     <html>
       <head>
         <title>Invoice</title>
         <style>
-          body {
-            font-family: Arial;
-            padding: 40px;
-            color: #222;
-          }
-
-          .invoice-box {
-            max-width: 800px;
-            margin: auto;
-            border: 1px solid #ddd;
-            padding: 30px;
-          }
-
-          h1 {
-            text-align: center;
-            margin-bottom: 20px;
-          }
-
-          .info {
-            margin-bottom: 20px;
-          }
-
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-
-          table th,
-          table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-          }
-
-          th {
-            background: #f4f4f4;
-          }
-
-          .total {
-            text-align: right;
-            margin-top: 20px;
-            font-size: 22px;
-            font-weight: bold;
-          }
-
-          .footer {
-            text-align: center;
-            margin-top: 50px;
-            font-size: 14px;
-            color: #666;
-          }
+          body { font-family: Arial; padding: 40px; color: #222; }
+          .invoice-box { max-width: 800px; margin: auto; border: 1px solid #ddd; padding: 30px; }
+          h1 { text-align: center; margin-bottom: 20px; }
+          .info { margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          table th, table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background: #f4f4f4; }
+          .total { text-align: right; margin-top: 20px; font-size: 22px; font-weight: bold; }
+          .footer { text-align: center; margin-top: 50px; font-size: 14px; color: #666; }
         </style>
       </head>
-
       <body>
         <div class="invoice-box">
           <h1>INVENT BILLING LEDGER</h1>
-
           <div class="info">
-            <p><strong>Customer:</strong> ${order.customer}</p>
+            <p><strong>Customer:</strong> ${
+              order.customer?.name || order.customer || ""
+            }</p>
+            <p><strong>Email:</strong> ${order.email || "-"}</p>
+            <p><strong>Phone:</strong> ${order.phone || "-"}</p>
             <p><strong>Status:</strong> ${order.status}</p>
             <p><strong>Payment:</strong> ${order.payment}</p>
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
           </div>
-
           <table>
             <thead>
               <tr>
@@ -273,36 +255,33 @@ const printInvoice = (order) => {
                 <th>Total</th>
               </tr>
             </thead>
-
             <tbody>
               <tr>
-                <td>${product?.name || "Unknown Product"}</td>
+                <td>${
+                  product?.name ||
+                  order.productId?.name ||
+                  "Unknown Product"
+                }</td>
                 <td>${order.quantity}</td>
-                <td>৳${product?.price || 0}</td>
+                <td>৳${
+                  product?.pricePerUnit || product?.price || 0
+                }</td>
                 <td>৳${order.total}</td>
               </tr>
             </tbody>
           </table>
-
-          <div class="total">
-            Grand Total: ৳${order.total}
-          </div>
-
-          <div class="footer">
-            Thank you for your business
-          </div>
+          <div class="total">Grand Total: ৳${order.total}</div>
+          <div class="footer">Thank you for your business</div>
         </div>
       </body>
     </html>
   `);
-
-  printWindow.document.close();
-  printWindow.print();
-};
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   return (
     <div className={`app-container ${dark ? "dark" : "light"}`}>
-
       {/* SIDEBAR */}
       <button
         className={`hamburger ${menuOpen ? "open" : ""}`}
@@ -321,30 +300,37 @@ const printInvoice = (order) => {
       />
 
       <main className="main-content">
-
-        {/* TOPBAR */}
+        {/* TOPBAR — same layout as Products */}
         <div className="topbar">
-          <h1><i className="fas fa-box"></i> Orders</h1>
+          <h1>
+            <i className="fas fa-box"></i> Orders
+          </h1>
 
-          <button
-            className="add-btn"
-            onClick={() => setShowModal(true)}
-          >
-            <i className="fas fa-chart-bar"></i> New Order
-          </button>
+          <div className="actions">
+            <input
+              className="search-input"
+              placeholder="Search orders..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <button className="add-btn" onClick={() => setShowModal(true)}>
+              <i className="fas fa-plus"></i> New Order
+            </button>
+          </div>
         </div>
 
         {/* ================= GRAPH ================= */}
         <div className="stats-grid">
-
           <div className="table-card">
             <h3>Orders Status</h3>
-
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={[
-                { name: "Pending", value: pendingOrders },
-                { name: "Completed", value: completedOrders },
-              ]}>
+              <BarChart
+                data={[
+                  { name: "Pending", value: pendingOrders },
+                  { name: "Completed", value: completedOrders },
+                ]}
+              >
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -356,13 +342,12 @@ const printInvoice = (order) => {
           <div className="table-card">
             <h3>Revenue</h3>
             <h2 style={{ fontSize: "28px" }}>৳{revenue}</h2>
-
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={[
-                    { name: "Revenue", value: revenue },
-                    { name: "Other", value: 1000 },
+                    { name: "Revenue", value: revenue || 0 },
+                    { name: "Other", value: revenue ? 0 : 1 },
                   ]}
                   dataKey="value"
                   outerRadius={80}
@@ -374,7 +359,6 @@ const printInvoice = (order) => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-
         </div>
 
         {/* STATS */}
@@ -383,15 +367,17 @@ const printInvoice = (order) => {
             <h2>{orders.length}</h2>
             <p>Total Orders</p>
           </div>
-
           <div className="stat-card">
             <h2>{pendingOrders}</h2>
             <p>Pending</p>
           </div>
-
           <div className="stat-card">
             <h2>{completedOrders}</h2>
             <p>Completed</p>
+          </div>
+          <div className="stat-card">
+            <h2>{filteredOrders.length}</h2>
+            <p>{search ? "Search Results" : "Showing"}</p>
           </div>
         </div>
 
@@ -409,48 +395,47 @@ const printInvoice = (order) => {
                 <th>Action</th>
               </tr>
             </thead>
-
             <tbody>
-  {orders.map((o) => {
-    return (
-      <tr key={o._id}>
-        <td>{o.customer?.name || o.customer || "Unknown"}</td>
-
-        <td>{o.productId?.name || "Unknown"}</td>
-
-        <td>{o.quantity}</td>
-
-        <td>
-          ৳{(o.productId?.pricePerUnit || 0) * o.quantity}
-        </td>
-
-        <td>৳{o.total}</td>
-
-        <td>{o.status}</td>
-        <td>{o.payment}</td>
-<td>
-  <button className="edit-btn" onClick={() => startEdit(o)}>
-    <i className="fas fa-edit"></i>
-  </button>
-
-
-
-  <button
-    className="delete-btn"
-    onClick={() => deleteOrder(o._id)}
-  >
-    <i className="fas fa-trash"></i>
-  </button>
-    <button
-    className="print-btn"
-    onClick={() => printInvoice(o)}
-  >
-    <i className="fas fa-print"></i>
-  </button>
-</td>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center", padding: "28px" }}>
+                    {search
+                      ? `No orders found for "${search}"`
+                      : "No orders yet"}
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((o) => (
+                  <tr key={o._id}>
+                    <td>{o.customer?.name || o.customer || "Unknown"}</td>
+                    <td>{o.productId?.name || "Unknown"}</td>
+                    <td>{o.quantity}</td>
+                    <td>৳{Number(o.total || 0).toLocaleString()}</td>
+                    <td>{o.status}</td>
+                    <td>{o.payment}</td>
+                    <td>
+                      <button
+                        className="edit-btn"
+                        onClick={() => startEdit(o)}
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => deleteOrder(o._id)}
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                      <button
+                        className="print-btn"
+                        onClick={() => printInvoice(o)}
+                      >
+                        <i className="fas fa-print"></i>
+                      </button>
+                    </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -459,7 +444,6 @@ const printInvoice = (order) => {
         {showModal && (
           <div className="modal-overlay">
             <div className="modal-box large">
-
               <h2>{editMode ? "Edit Order" : "Add Order"}</h2>
 
               <input
@@ -469,18 +453,17 @@ const printInvoice = (order) => {
                 onChange={handleChange}
               />
               <input
-                 name="email"
-                 placeholder="Customer Email"
-                 value={form.email}
-                 onChange={handleChange}
-               />
-               
-               <input
-                 name="phone"
-                 placeholder="Customer Phone"
-                 value={form.phone}
-                 onChange={handleChange}
-               />
+                name="email"
+                placeholder="Customer Email"
+                value={form.email}
+                onChange={handleChange}
+              />
+              <input
+                name="phone"
+                placeholder="Customer Phone"
+                value={form.phone}
+                onChange={handleChange}
+              />
 
               <select
                 name="productId"
@@ -502,11 +485,7 @@ const printInvoice = (order) => {
                 onChange={handleChange}
               />
 
-              <input
-                name="total"
-                value={form.total}
-                readOnly
-              />
+              <input name="total" value={form.total} readOnly />
 
               <select
                 name="status"
@@ -533,22 +512,14 @@ const printInvoice = (order) => {
                 >
                   {editMode ? "Update" : "Save"}
                 </button>
-
-                <button
-                  className="cancel-btn"
-                  onClick={resetForm}
-                >
+                <button className="cancel-btn" onClick={resetForm}>
                   Cancel
                 </button>
               </div>
-
             </div>
           </div>
         )}
-
       </main>
     </div>
   );
 }
-
-    
