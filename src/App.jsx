@@ -15,6 +15,7 @@ import Tracking from "./pages/Tracking";
 import LiveStoreTracking from "./pages/LiveStoreTracking";
 import Stores from "./pages/Stores";
 import Billing from "./pages/Billing";
+import InventIQChat from "./components/InventIQChat";
 
 // ================= PRIVATE ROUTE =================
 function PrivateRoute({ children }) {
@@ -26,6 +27,9 @@ export default function App() {
   const [dark, setDark] = useState(true);
   const navigate = useNavigate();
 
+  // Re-read on each render so chat appears after login
+  const isLoggedIn = !!localStorage.getItem("token");
+
   // ================= LOGOUT =================
   const logout = () => {
     localStorage.removeItem("token");
@@ -33,148 +37,151 @@ export default function App() {
   };
 
   return (
-    <Routes>
+    <>
+      <Routes>
+        {/* AUTH */}
+        <Route path="/auth" element={<Auth />} />
 
-      {/* AUTH */}
-      <Route path="/auth" element={<Auth />} />
+        {/* DASHBOARD */}
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Dashboard dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* DASHBOARD */}
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <Dashboard dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* PRODUCTS */}
+        <Route
+          path="/products"
+          element={
+            <PrivateRoute>
+              <Products dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* PRODUCTS */}
-      <Route
-        path="/products"
-        element={
-          <PrivateRoute>
-            <Products dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* ORDERS */}
+        <Route
+          path="/orders"
+          element={
+            <PrivateRoute>
+              <Orders dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* ORDERS */}
-      <Route
-        path="/orders"
-        element={
-          <PrivateRoute>
-            <Orders dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* SUPPLIERS */}
+        <Route
+          path="/suppliers"
+          element={
+            <PrivateRoute>
+              <Suppliers dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* SUPPLIERS */}
-      <Route
-        path="/suppliers"
-        element={
-          <PrivateRoute>
-            <Suppliers dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* SETTINGS */}
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Settings dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* SETTINGS */}
-      <Route
-        path="/settings"
-        element={
-          <PrivateRoute>
-            <Settings dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* LOGISTICS */}
+        <Route
+          path="/logistics"
+          element={
+            <PrivateRoute>
+              <Logistics dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* LOGISTICS */}
-      <Route
-        path="/logistics"
-        element={
-          <PrivateRoute>
-            <Logistics dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* REPORTS */}
+        <Route
+          path="/reports"
+          element={
+            <PrivateRoute>
+              <Reports dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* REPORTS */}
-      <Route
-        path="/reports"
-        element={
-          <PrivateRoute>
-            <Reports dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* CASHFLOW */}
+        <Route
+          path="/cashflow"
+          element={
+            <PrivateRoute>
+              <CashFlow dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* CASHFLOW */}
-      <Route
-        path="/cashflow"
-        element={
-          <PrivateRoute>
-            <CashFlow dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* CUSTOMERS */}
+        <Route
+          path="/customers"
+          element={
+            <PrivateRoute>
+              <Customers dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* CUSTOMERS */}
-      <Route
-        path="/customers"
-        element={
-          <PrivateRoute>
-            <Customers dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* TRACKING */}
+        <Route
+          path="/tracking"
+          element={
+            <PrivateRoute>
+              <Tracking dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* TRACKING */}
-      <Route
-        path="/tracking"
-        element={
-          <PrivateRoute>
-            <Tracking dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* LIVE STORE TRACKING */}
+        <Route
+          path="/live-store-tracking"
+          element={
+            <PrivateRoute>
+              <LiveStoreTracking
+                dark={dark}
+                setDark={setDark}
+                logout={logout}
+              />
+            </PrivateRoute>
+          }
+        />
 
-      {/* LIVE STORE TRACKING */}
-      <Route
-        path="/live-store-tracking"
-        element={
-          <PrivateRoute>
-            <LiveStoreTracking
-              dark={dark}
-              setDark={setDark}
-              logout={logout}
-            />
-          </PrivateRoute>
-        }
-      />
+        {/* STORES */}
+        <Route
+          path="/stores"
+          element={
+            <PrivateRoute>
+              <Stores dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* STORES */}
-      <Route
-        path="/stores"
-        element={
-          <PrivateRoute>
-            <Stores dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* BILLING */}
+        <Route
+          path="/billing"
+          element={
+            <PrivateRoute>
+              <Billing dark={dark} setDark={setDark} logout={logout} />
+            </PrivateRoute>
+          }
+        />
 
-      {/* BILLING */}
-      <Route
-        path="/billing"
-        element={
-          <PrivateRoute>
-            <Billing dark={dark} setDark={setDark} logout={logout} />
-          </PrivateRoute>
-        }
-      />
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-
-    </Routes>
+      {/* Floating InventIQ chat — only when logged in */}
+      {isLoggedIn && <InventIQChat dark={dark} />}
+    </>
   );
 }
