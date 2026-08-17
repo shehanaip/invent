@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-// Loaded from .env → VITE_GROQ_API_KEY
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "gemma2-9b-it",
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.6-27b",
 ];
 
 const SYSTEM_PROMPT = `You are InventIQ, a smart assistant inside the INVENT inventory management system (web dashboard).
