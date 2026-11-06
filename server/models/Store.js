@@ -16,6 +16,12 @@ const storeSchema = new mongoose.Schema(
       trim: true,
     },
 
+    groupName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     location: {
       type: String,
       default: "",

@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePreferences } from "../context/usePreferences";
+import { translate } from "../utils/translations";
 import "../auth.css";
 
-const API = "http://localhost:5000/api";
+// ✅ PRODUCTION SAFE API BASE
+const API =
+  import.meta.env.VITE_API_URL || "https://invent-yfwy.onrender.com/api";
 
 export default function Auth() {
+  const { settings } = usePreferences();
+  const t = (text) => translate(text, settings.language);
   const [isLogin, setIsLogin] = useState(true);
 
   const [name, setName] = useState("");
@@ -13,7 +19,7 @@ export default function Auth() {
 
   const nav = useNavigate();
 
-  // ================= GOOGLE CALLBACK HANDLER =================
+  // ================= GOOGLE CALLBACK =================
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
@@ -26,9 +32,7 @@ export default function Auth() {
 
   // ================= PASSWORD VALIDATION =================
   const validatePassword = (pass) => {
-    // at least 6 chars, 1 letter, 1 number
-    const regex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
-    return regex.test(pass);
+    return /^(?=.*[A-Za-z])(?=.*\d).{6,}$/.test(pass);
   };
 
   // ================= GOOGLE LOGIN =================
@@ -38,19 +42,21 @@ export default function Auth() {
 
   // ================= LOGIN =================
   const login = async () => {
-    const res = await fetch(`${API}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.token) {
+      if (!res.ok) throw new Error(data.msg);
+
       localStorage.setItem("token", data.token);
       nav("/");
-    } else {
-      alert(data.msg || "Login failed");
+    } catch (err) {
+      alert(err.message || "Login failed");
     }
   };
 
@@ -61,86 +67,67 @@ export default function Auth() {
       return;
     }
 
-    const res = await fetch(`${API}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data._id || data.user) {
+      if (!res.ok) throw new Error(data.msg);
+
       setIsLogin(true);
-    } else {
-      alert(data.msg || "Register failed");
+      alert("Registered successfully. Please login.");
+    } catch (err) {
+      alert(err.message || "Register failed");
     }
   };
 
   return (
     <div className={`auth-wrapper ${isLogin ? "login" : "register"}`}>
-
-      {/* LEFT SIDE */}
       <div className="auth-left">
         <h1>INVENT</h1>
         <p>Smart Inventory Management System</p>
-
-        <div className="glow"></div>
+        <div className="glow glow-1"></div>
       </div>
 
-      {/* RIGHT SIDE */}
       <div className="auth-right">
-
         <div className="auth-box">
-
-          <h2>{isLogin ? "Welcome Back" : "Create Account"}</h2>
+          <h2>{isLogin ? t("Welcome Back") : t("Create Account")}</h2>
 
           {!isLogin && (
             <input
-              placeholder="Full Name"
+              placeholder={t("Full Name")}
               onChange={(e) => setName(e.target.value)}
             />
           )}
 
           <input
-            placeholder="Email"
+            placeholder={t("Email")}
             onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t("Password")}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* MAIN BUTTON */}
           <button onClick={isLogin ? login : register}>
-            {isLogin ? "Login" : "Register"}
+            {isLogin ? t("Login") : t("Register")}
           </button>
 
-          {/* GOOGLE LOGIN */}
-          <button
-            type="button"
-            onClick={googleLogin}
-            style={{
-              marginTop: "10px",
-              background: "#fff",
-              color: "#000",
-              border: "1px solid #ddd",
-            }}
-          >
-            <i className="fab fa-google"></i> Continue with Google
+          <button onClick={googleLogin}>
+           <i className="fab fa-google"> </i> {t("Continue with Google")}
           </button>
 
-          <p>
-            {isLogin ? "New here?" : "Already have account?"}{" "}
-            <span onClick={() => setIsLogin(!isLogin)}>
-              {isLogin ? "Create one" : "Login"}
-            </span>
+          <p onClick={() => setIsLogin(!isLogin)}>
+            {isLogin ? t("Create account") : t("Login instead")}
           </p>
-
         </div>
       </div>
-
     </div>
   );
 }

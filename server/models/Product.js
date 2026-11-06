@@ -38,6 +38,12 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
+    tax: {
+      type: Number,
+      min: 0,
+      max: 1000,
+    },
+
     allowPartialSale: {
       type: Boolean,
       default: false,
@@ -52,6 +58,32 @@ const productSchema = new mongoose.Schema(
       {
         code: String,
         stock: Number,
+      },
+    ],
+
+    barcode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    barcodes: {
+      type: [String],
+      default: [],
+    },
+
+    stockByStore: [
+      {
+        storeId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Store",
+          required: true,
+        },
+        stock: {
+          type: Number,
+          min: 0,
+          default: 0,
+        },
       },
     ],
 

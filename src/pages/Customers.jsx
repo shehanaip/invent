@@ -1,8 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import Pagination from "../components/Pagination";
+import { usePreferences } from "../context/usePreferences";
+import { formatCurrency } from "../utils/preferences";
+import { translate } from "../utils/translations";
+import usePagination from "../utils/usePagination";
 
 export default function Customers({ dark, setDark, logout }) {
+  const { settings, exchangeRates } = usePreferences();
+  const t = (text) => translate(text, settings.language);
+  const money = (amount) => formatCurrency(amount, settings, exchangeRates);
   const [menuOpen, setMenuOpen] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +58,7 @@ export default function Customers({ dark, setDark, logout }) {
         .includes(search.toLowerCase())
     );
   }, [customers, search]);
+  const customerPagination = usePagination(filtered);
 
   // ================= STATS (DYNAMIC) =================
   const stats = useMemo(() => {
@@ -67,13 +76,13 @@ export default function Customers({ dark, setDark, logout }) {
   // ================= LOADING =================
   if (loading) {
     return (
-      <div className="loader-screen">
+      <div className={`loader-screen ${dark ? "dark" : "light"}`}>
         <div className="loader-bars">
           <span></span>
           <span></span>
           <span></span>
         </div>
-        <h1>CUSTOMERS</h1>
+        <h1>{t("Customers")}</h1>
       </div>
     );
   }
@@ -101,52 +110,54 @@ export default function Customers({ dark, setDark, logout }) {
       />
 
       {/* MAIN */}
-      <main className="main-content">
+      <main className="main-content customers-page modern-data-page">
 
         {/* TOPBAR */}
         <div className="topbar">
           <h1>
-            <i className="fas fa-users"></i> Customers
+            <i className="fas fa-users"></i> {t("Customers")}
           </h1>
 
           <input
             className="search-input"
-            placeholder="Search customers..."
+            placeholder={t("Search customers...")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              customerPagination.setPage(1);
+            }}
           />
         </div>
 
         {/* STATS (DYNAMIC) */}
         <div className="stats-grid">
 
-          <div className="stat-card">
+          <div className="stat-card modern-stat-card">
+            <span className="modern-stat-icon"><i className="fas fa-users" aria-hidden="true"></i></span>
             <h2>
-              <i className="fas fa-user"></i> {stats.total}
+              {stats.total}
             </h2>
-            <p>Total Customers</p>
+            <p>{t("Total Customers")}</p>
           </div>
 
-          <div className="stat-card">
-            <h2 style={{ color: "#22c55e" }}>
-              <i className="fas fa-user-check"></i> {stats.active}
-            </h2>
-            <p>Active</p>
+          <div className="stat-card modern-stat-card active-stat">
+            <span className="modern-stat-icon"><i className="fas fa-user-check" aria-hidden="true"></i></span>
+            <h2 style={{ color: "#22c55e" }}>{stats.active}</h2>
+            <p>{t("Active")}</p>
           </div>
 
-          <div className="stat-card">
-            <h2 style={{ color: "#ef4444" }}>
-              <i className="fas fa-user-xmark"></i> {stats.inactive}
-            </h2>
-            <p>Inactive</p>
+          <div className="stat-card modern-stat-card inactive-stat">
+            <span className="modern-stat-icon"><i className="fas fa-user-xmark" aria-hidden="true"></i></span>
+            <h2 style={{ color: "#ef4444" }}>{stats.inactive}</h2>
+            <p>{t("Inactive")}</p>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card modern-stat-card spend-stat">
+            <span className="modern-stat-icon"><i className="fas fa-wallet" aria-hidden="true"></i></span>
             <h2 style={{ color: "#f59e0b" }}>
-              <i className="fas fa-wallet"></i>{" "}
-              ৳{stats.spent.toLocaleString()}
+              {money(stats.spent)}
             </h2>
-            <p>Total Spent</p>
+            <p>{t("Total Spent")}</p>
           </div>
 
         </div>
@@ -154,31 +165,34 @@ export default function Customers({ dark, setDark, logout }) {
         {/* TABLE */}
         <div className="table-card">
           <h3>
-            <i className="fas fa-address-book"></i> Customer List
+            <i className="fas fa-address-book"></i> {t("Customer List")}
           </h3>
 
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Total Spent</th>
+                <th>{t("Name")}</th>
+                <th>{t("Phone")}</th>
+                <th>{t("Email")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Total Spent")}</th>
               </tr>
             </thead>
 
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="5">No customers found</td>
+                  <td colSpan="5">{t("No customers found")}</td>
                 </tr>
               ) : (
-                filtered.map((c) => (
+                customerPagination.pageItems.map((c) => (
                   <tr key={c._id || c.id}>
 
-                    <td>
-                      <i className="fas fa-user"></i> {c.name}
+                    <td className="customer-name-cell">
+                      <span className="customer-avatar" aria-hidden="true">
+                        {(c.name || "?").trim().charAt(0).toUpperCase()}
+                      </span>
+                      <strong>{c.name}</strong>
                     </td>
 
                     <td>
@@ -190,20 +204,15 @@ export default function Customers({ dark, setDark, logout }) {
                     </td>
 
                     <td>
-                      {c.status === "Active" ? (
-                        <span style={{ color: "#22c55e" }}>
-                          <i className="fas fa-circle-check"></i> Active
-                        </span>
-                      ) : (
-                        <span style={{ color: "#ef4444" }}>
-                          <i className="fas fa-circle-xmark"></i> Inactive
-                        </span>
-                      )}
+                      <span className={`modern-status-pill ${c.status === "Active" ? "positive" : "negative"}`}>
+                        <i className={`fas ${c.status === "Active" ? "fa-circle-check" : "fa-circle-xmark"}`} aria-hidden="true"></i>
+                        {t(c.status === "Active" ? "Active" : "Inactive")}
+                      </span>
                     </td>
 
                     <td>
                       <i className="fas fa-bangladeshi-taka-sign"></i>{" "}
-                      {Number(c.totalSpent || 0).toLocaleString()}
+                      {money(c.totalSpent || 0)}
                     </td>
 
                   </tr>
@@ -211,6 +220,14 @@ export default function Customers({ dark, setDark, logout }) {
               )}
             </tbody>
           </table>
+          <Pagination
+            totalItems={filtered.length}
+            page={customerPagination.page}
+            pageCount={customerPagination.pageCount}
+            pageSize={customerPagination.pageSize}
+            onPageChange={customerPagination.setPage}
+            t={t}
+          />
         </div>
 
       </main>
