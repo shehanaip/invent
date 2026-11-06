@@ -216,7 +216,7 @@ export default function InventIQChat({ dark = true }) {
           className={`inventiq-panel ${dark ? "dark" : "light"}`}
           style={panelPos}
         >
-          <div className="inventiq-header">
+          <div className={`inventiq-header ${dark ? "dark" : "light"}`}>
             <div className="inventiq-avatar">
               <i className="fas fa-robot"></i>
             </div>
@@ -299,7 +299,7 @@ export default function InventIQChat({ dark = true }) {
       )}
 
       <button
-        className="inventiq-fab"
+        className={`inventiq-fab ${dark ? "dark" : "light"}`}
         style={{
           left: pos.x ?? undefined,
           top: pos.y ?? undefined,

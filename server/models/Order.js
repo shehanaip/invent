@@ -17,9 +17,33 @@ const orderSchema = new mongoose.Schema(
       ref: "Product",
     },
 
+    lineItems: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        barcode: { type: String, default: "" },
+        quantity: { type: Number, min: 0, required: true },
+        unitPrice: { type: Number, min: 0, default: 0 },
+        total: { type: Number, min: 0, default: 0 },
+      },
+    ],
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      default: null,
+    },
+    stockDeducted: {
+      type: Boolean,
+      default: false,
+    },
+
     quantity: { type: Number, default: 1 },
     unit: { type: String, default: "" },
     total: { type: Number, default: 0 },
+    taxRate: { type: Number, min: 0, max: 1000 },
 
     status: {
       type: String,

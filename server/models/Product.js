@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
+    // 🔐 IMPORTANT: ownership (multi-user support)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -21,38 +22,9 @@ const productSchema = new mongoose.Schema(
     subCategory: String,
     childCategory: String,
 
-    // ✅ NEW
-    barcode: String,
-
-    // ✅ NEW
-    qrEnabled: {
-      type: Boolean,
-      default: false,
-    },
-
-    // ✅ NEW
-    tax: {
-      type: Number,
-      default: 0,
-    },
-
-    // ✅ NEW
-    currency: {
-      type: String,
-      default: "BDT",
-    },
-
     unitType: {
       type: String,
-      enum: [
-        "piece",
-        "kg",
-        "gram",
-        "liter",
-        "ml",
-        "box",
-        "packet",
-      ],
+      enum: ["piece", "kg", "gram", "liter", "ml", "box", "packet"],
       default: "piece",
     },
 
@@ -64,6 +36,12 @@ const productSchema = new mongoose.Schema(
     pricePerUnit: {
       type: Number,
       required: true,
+    },
+
+    tax: {
+      type: Number,
+      min: 0,
+      max: 1000,
     },
 
     allowPartialSale: {
@@ -83,6 +61,32 @@ const productSchema = new mongoose.Schema(
       },
     ],
 
+    barcode: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    barcodes: {
+      type: [String],
+      default: [],
+    },
+
+    stockByStore: [
+      {
+        storeId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Store",
+          required: true,
+        },
+        stock: {
+          type: Number,
+          min: 0,
+          default: 0,
+        },
+      },
+    ],
+
     images: [String],
 
     status: {
@@ -90,9 +94,7 @@ const productSchema = new mongoose.Schema(
       default: "Available",
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Product", productSchema);

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePreferences } from "../context/usePreferences";
+import { translate } from "../utils/translations";
 import "../auth.css";
 
 // ✅ PRODUCTION SAFE API BASE
@@ -7,6 +9,8 @@ const API =
   import.meta.env.VITE_API_URL || "https://invent-yfwy.onrender.com/api";
 
 export default function Auth() {
+  const { settings } = usePreferences();
+  const t = (text) => translate(text, settings.language);
   const [isLogin, setIsLogin] = useState(true);
 
   const [name, setName] = useState("");
@@ -91,36 +95,36 @@ export default function Auth() {
 
       <div className="auth-right">
         <div className="auth-box">
-          <h2>{isLogin ? "Welcome Back" : "Create Account"}</h2>
+          <h2>{isLogin ? t("Welcome Back") : t("Create Account")}</h2>
 
           {!isLogin && (
             <input
-              placeholder="Full Name"
+              placeholder={t("Full Name")}
               onChange={(e) => setName(e.target.value)}
             />
           )}
 
           <input
-            placeholder="Email"
+            placeholder={t("Email")}
             onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t("Password")}
             onChange={(e) => setPassword(e.target.value)}
           />
 
           <button onClick={isLogin ? login : register}>
-            {isLogin ? "Login" : "Register"}
+            {isLogin ? t("Login") : t("Register")}
           </button>
 
           <button onClick={googleLogin}>
-           <i className="fab fa-google"> </i> Continue with Google
+           <i className="fab fa-google"> </i> {t("Continue with Google")}
           </button>
 
           <p onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? "Create account" : "Login instead"}
+            {isLogin ? t("Create account") : t("Login instead")}
           </p>
         </div>
       </div>

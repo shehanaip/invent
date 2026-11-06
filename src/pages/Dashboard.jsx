@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import Pagination from "../components/Pagination";
+import ThemeToggle from "../components/ThemeToggle";
 import API from "../api";
+import { usePreferences } from "../context/usePreferences";
+import { formatCurrency } from "../utils/preferences";
+import { translate } from "../utils/translations";
+import usePagination from "../utils/usePagination";
 import {
   BarChart,
   Bar,
+  CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
@@ -16,6 +23,9 @@ import {
 
 export default function Dashboard({ dark, setDark }) {
   const navigate = useNavigate();
+  const { settings, exchangeRates } = usePreferences();
+  const t = (text) => translate(text, settings.language);
+  const money = (amount) => formatCurrency(amount, settings, exchangeRates);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
@@ -94,10 +104,27 @@ const fetchOrders = async () => {
   const revenue = orders
   .filter((o) => o.status === "Completed")
   .reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const stockChartData = products.slice(0, 6).map((product) => ({
+    name: product.name,
+    stock: Number(product.totalStock || 0),
+  }));
+  const healthyProducts = products.filter((product) => product.totalStock > 5).length;
+  const lowStockProducts = products.filter(
+    (product) => product.totalStock > 0 && product.totalStock <= 5
+  ).length;
+  const outOfStockProducts = products.filter(
+    (product) => product.totalStock === 0
+  ).length;
+  const stockDistributionData = [
+    { name: "Healthy", value: healthyProducts, color: "#22c55e" },
+    { name: "Low Stock", value: lowStockProducts, color: "#f59e0b" },
+    { name: "Out of Stock", value: outOfStockProducts, color: "#ef4444" },
+  ];
+  const productPagination = usePagination(products);
 
   if (loading) {
     return (
-      <div className="loader-screen">
+      <div className={`loader-screen ${dark ? "dark" : "light"}`}>
         <div className="loader-bars">
           <span></span>
           <span></span>
@@ -134,18 +161,12 @@ const fetchOrders = async () => {
         {/* TOPBAR */}
         <div className="topbar">
           <h1>
-            <i className="fas fa-warehouse"></i> Inventory Dashboard
+            <i className="fas fa-warehouse"></i> {t("Inventory Dashboard")}
           </h1>
 
           <div className="actions">
 
-            <button
-              className="theme-toggle"
-              onClick={() => setDark(!dark)}
-            >
-              <i className={dark ? "fas fa-sun" : "fas fa-moon"}></i>
-              &nbsp; {dark ? "Light" : "Dark"}
-            </button>
+            <ThemeToggle dark={dark} setDark={setDark} t={t} />
 
 
 
@@ -153,72 +174,110 @@ const fetchOrders = async () => {
         </div>
         {/* graph */}
         {/* ================= GRAPHS ================= */}
-<div className="stats-grid">
+<div className="stats-grid dashboard-charts">
 
   {/* BAR CHART */}
-  <div className="table-card">
-    <h3>
-      <i className="fas fa-chart-bar"></i> Stock Overview
-    </h3>
+  <div className="table-card dashboard-chart-card">
+    <div className="dashboard-chart-heading">
+      <div>
+        <h3><i className="fas fa-chart-bar"></i> {t("Stock Overview")}</h3>
+        <p>Units available across your top products</p>
+      </div>
+      <span className="dashboard-chart-badge">{products.length} products</span>
+    </div>
 
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={280}>
       <BarChart
-        data={products.slice(0, 6).map((p) => ({
-          name: p.name,
-          stock: Number(p.totalStock || 0),
-        }))}
+        data={stockChartData}
+        margin={{ top: 12, right: 8, left: -18, bottom: 8 }}
       >
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="stock" fill="#ff7a00" />
+        <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="4 5" />
+        <XAxis
+          dataKey="name"
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: "var(--chart-muted)", fontSize: 11 }}
+          tickFormatter={(name) => name.length > 11 ? `${name.slice(0, 10)}…` : name}
+          interval={0}
+          angle={-35}
+          textAnchor="end"
+          height={68}
+          tickMargin={12}
+        />
+        <YAxis
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: "var(--chart-muted)", fontSize: 11 }}
+          allowDecimals={false}
+        />
+        <Tooltip
+          cursor={{ fill: "var(--chart-hover)" }}
+          contentStyle={{
+            background: "var(--chart-tooltip)",
+            border: "1px solid var(--chart-grid)",
+            borderRadius: 12,
+            color: "var(--text)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+          }}
+          labelStyle={{ color: "var(--text)", fontWeight: 700 }}
+          itemStyle={{ color: "var(--accent)" }}
+        />
+        <Bar dataKey="stock" name="Units in stock" fill="var(--accent)" radius={[7, 7, 2, 2]} maxBarSize={42} />
       </BarChart>
     </ResponsiveContainer>
   </div>
 
   {/* PIE CHART */}
-  <div className="table-card">
-    <h3>
-      <i className="fas fa-chart-pie"></i> Stock Distribution
-    </h3>
+  <div className="table-card dashboard-chart-card">
+    <div className="dashboard-chart-heading">
+      <div>
+        <h3><i className="fas fa-chart-pie"></i> {t("Stock Distribution")}</h3>
+        <p>Product health at a glance</p>
+      </div>
+      <span className="dashboard-chart-badge">Inventory health</span>
+    </div>
 
-    <ResponsiveContainer width="100%" height={260}>
-      <PieChart>
+    <div className="dashboard-donut-wrap">
+      <ResponsiveContainer width="100%" height={220}>
+        <PieChart>
         <Pie
-          data={[
-            {
-              name: "Healthy",
-              value: Math.max(
-                products.length -
-                products.filter((p) => p.totalStock <= 5 ).length -
-                products.filter((p) => p.totalStock === 0).length,
-                0
-              ),
-              color: "#22c55e",
-            },
-            {
-              name: "Low Stock",
-              value: products.filter((p) => p.totalStock <= 5).length,
-              color: "#f59e0b",
-            },
-            {
-              name: "Out",
-              value: products.filter((p) => p.totalStock === 0).length,
-              color: "#ef4444",
-            },
-          ]}
+          data={stockDistributionData}
           dataKey="value"
-          outerRadius={90}
-          label
+          innerRadius={62}
+          outerRadius={86}
+          paddingAngle={4}
+          stroke="none"
         >
-          <Cell fill="#22c55e" />
-          <Cell fill="#f59e0b" />
-          <Cell fill="#ef4444" />
+          {stockDistributionData.map((entry) => (
+            <Cell key={entry.name} fill={entry.color} />
+          ))}
         </Pie>
-
-        <Tooltip />
-      </PieChart>
-    </ResponsiveContainer>
+        <Tooltip
+          contentStyle={{
+            background: "var(--chart-tooltip)",
+            border: "1px solid var(--chart-grid)",
+            borderRadius: 12,
+            color: "var(--text)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+          }}
+          itemStyle={{ color: "var(--text)" }}
+        />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="dashboard-donut-center">
+        <strong>{products.length}</strong>
+        <span>Products</span>
+      </div>
+    </div>
+    <div className="dashboard-chart-legend">
+      {stockDistributionData.map((entry) => (
+        <div className="dashboard-legend-item" key={entry.name}>
+          <span className="dashboard-legend-dot" style={{ background: entry.color }} />
+          <span>{t(entry.name)}</span>
+          <strong>{entry.value}</strong>
+        </div>
+      ))}
+    </div>
   </div>
 
 </div>
@@ -229,19 +288,19 @@ const fetchOrders = async () => {
           <div className="stat-card">
             <i className="fas fa-box"></i>
             <h2>{products.length}</h2>
-            <p>Products</p>
+            <p>{t("Products")}</p>
           </div>
 
           <div className="stat-card">
             <i className="fas fa-exclamation-triangle"></i>
             <h2>{lowStockCount}</h2>
-            <p>Low Stock</p>
+            <p>{t("Low Stock")}</p>
           </div>
 
           <div className="stat-card">
             <i className="fas fa-dollar-sign"></i>
-            <h2>৳{revenue.toLocaleString()}</h2>
-            <p>Revenue</p>
+            <h2>{money(revenue)}</h2>
+            <p>{t("Revenue")}</p>
           </div>
 
         </div>
@@ -249,31 +308,31 @@ const fetchOrders = async () => {
         {/* TABLE */}
         <div className="table-card">
           <h3>
-            <i className="fas fa-table"></i> Product Inventory
+            <i className="fas fa-table"></i> {t("Product Inventory")}
           </h3>
 
           <table>
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Stock</th>
-                <th>Status</th>
+                <th>{t("Product")}</th>
+                <th>{t("Stock")}</th>
+                <th>{t("Status")}</th>
               </tr>
             </thead>
 
             <tbody>
-              {products.map((p) => (
+              {productPagination.pageItems.map((p) => (
                 <tr key={p._id}>
                   <td>{p.name}</td>
                   <td>{p.totalStock}</td>
                   <td>
                     {p.totalStock <= 5 ? (
-                      <span style={{ color: "#ff7a00" }}>
-                        ⚠ Low Stock
+                      <span style={{ color: "var(--accent)" }}>
+                        ⚠ {t("Low Stock")}
                       </span>
                     ) : (
                       <span style={{ color: "#22c55e" }}>
-                        ✔ Available
+                        ✔ {t("Available")}
                       </span>
                     )}
                   </td>
@@ -281,7 +340,14 @@ const fetchOrders = async () => {
               ))}
             </tbody>
           </table>
-
+          <Pagination
+            totalItems={products.length}
+            page={productPagination.page}
+            pageCount={productPagination.pageCount}
+            pageSize={productPagination.pageSize}
+            onPageChange={productPagination.setPage}
+            t={t}
+          />
         </div>
 
         {/* MODAL */}
@@ -289,7 +355,7 @@ const fetchOrders = async () => {
           <div className="modal-overlay">
             <div className="modal-box large">
 
-              <h2><i className="fas fa-plus"></i> Add Product</h2>
+              <h2><i className="fas fa-plus"></i> {t("Add Product")}</h2>
 
               <input placeholder="Name" value={name} onChange={(e)=>setName(e.target.value)} />
               <input placeholder="Stock" type="number" value={stock} onChange={(e)=>setStock(e.target.value)} />
