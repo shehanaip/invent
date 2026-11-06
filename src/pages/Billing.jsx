@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import Pagination from "../components/Pagination";
 import { usePreferences } from "../context/usePreferences";
 import { formatCurrency, formatDate } from "../utils/preferences";
@@ -368,21 +369,21 @@ export default function Billing({ dark, setDark, logout }) {
 
                 <label className="compact-form-field" htmlFor="payment-type">
                   <span>{t("Type")}</span>
-                  <select id="payment-type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                  <AppSelect id="payment-type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                     <option value="Incoming">{t("Incoming (receive money)")}</option>
                     <option value="Outgoing">{t("Outgoing (pay someone)")}</option>
-                  </select>
+                  </AppSelect>
                 </label>
 
                 <label className="compact-form-field" htmlFor="payment-gateway">
                   <span>{t("Gateway")}</span>
-                  <select id="payment-gateway" value={form.gateway} onChange={(e) => setForm({ ...form, gateway: e.target.value })}>
+                  <AppSelect id="payment-gateway" value={form.gateway} onChange={(e) => setForm({ ...form, gateway: e.target.value })}>
                     <option value="SSLCommerz">SSLCommerz</option>
                     <option value="Stripe">Stripe</option>
                     <option value="PayPal">PayPal</option>
                     <option value="Cash">Cash</option>
                     <option value="Other">Other</option>
-                  </select>
+                  </AppSelect>
                 </label>
               </div>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import { usePreferences } from "../context/usePreferences";
 import { formatCurrency, formatTime } from "../utils/preferences";
 import { translate } from "../utils/translations";
@@ -253,10 +254,10 @@ export default function Stores({ dark, setDark, logout }) {
 
                 <label className="compact-form-field compact-field-wide" htmlFor="store-status">
                   <span>{t("Status")}</span>
-                  <select id="store-status" name="online" value={form.online} onChange={handleChange}>
+                  <AppSelect id="store-status" name="online" value={form.online} onChange={handleChange}>
                     <option value={true}>{t("Online")}</option>
                     <option value={false}>{t("Offline")}</option>
-                  </select>
+                  </AppSelect>
                 </label>
               </div>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import Pagination from "../components/Pagination";
 import { usePreferences } from "../context/usePreferences";
 import { translate } from "../utils/translations";
@@ -342,12 +343,12 @@ export default function Logistics({ dark, setDark, logout }) {
               <div className="compact-form-grid">
                 <label className="compact-form-field compact-field-wide" htmlFor="shipment-product">
                   <span>{t("Product")}</span>
-                  <select id="shipment-product" name="productId" value={form.productId} onChange={handleChange}>
+                  <AppSelect id="shipment-product" name="productId" value={form.productId} onChange={handleChange}>
                     <option value="">{t("Select Product")}</option>
                     {products.map((p) => (
                       <option key={p._id} value={p._id}>{p.name}</option>
                     ))}
-                  </select>
+                  </AppSelect>
                 </label>
 
                 <label className="compact-form-field" htmlFor="shipment-location">
@@ -362,12 +363,12 @@ export default function Logistics({ dark, setDark, logout }) {
 
                 <label className="compact-form-field compact-field-wide" htmlFor="shipment-status">
                   <span>{t("Status")}</span>
-                  <select id="shipment-status" name="status" value={form.status} onChange={handleChange}>
+                  <AppSelect id="shipment-status" name="status" value={form.status} onChange={handleChange}>
                     <option value="Pending">{t("Pending")}</option>
                     <option value="In Transit">{t("In Transit")}</option>
                     <option value="Delivered">{t("Delivered")}</option>
                     <option value="Cancelled">{t("Cancelled")}</option>
-                  </select>
+                  </AppSelect>
                 </label>
               </div>
 

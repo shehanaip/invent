@@ -1,5 +1,5 @@
 import Sidebar from "../components/Sidebar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import API from "../api";
 import Pagination from "../components/Pagination";
 import { usePreferences } from "../context/usePreferences";
@@ -30,6 +30,8 @@ export default function Reports({ dark, setDark, logout }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportPeriod, setReportPeriod] = useState("monthly");
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const periodControlRef = useRef(null);
   const [printSections, setPrintSections] = useState({
     summary: true,
     products: true,
@@ -66,12 +68,35 @@ export default function Reports({ dark, setDark, logout }) {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (!periodMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!periodControlRef.current?.contains(event.target)) {
+        setPeriodMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setPeriodMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [periodMenuOpen]);
+
   // ================= PRODUCT STATS =================
   const totalProducts = products.length;
-  const lowStock = products.filter((p) => Number(p.totalStock || 0) <= 5).length;
+  const lowStock = products.filter(
+    (p) => Number(p.totalStock || 0) > 0 && Number(p.totalStock || 0) <= 5
+  ).length;
   const outOfStock = products.filter(
     (p) => Number(p.totalStock || 0) === 0
   ).length;
+  const healthyProducts = totalProducts - lowStock - outOfStock;
 
   const totalValue = products.reduce(
     (sum, p) =>
@@ -82,7 +107,9 @@ export default function Reports({ dark, setDark, logout }) {
   const stockHealth =
     totalProducts === 0
       ? 0
-      : Math.round(((totalProducts - lowStock) / totalProducts) * 100);
+      : Math.round(
+          (healthyProducts / totalProducts) * 100
+        );
 
   // ================= ORDER STATS =================
   const now = new Date();
@@ -193,11 +220,7 @@ export default function Reports({ dark, setDark, logout }) {
   }));
 
   const pieData = [
-    {
-      name: t("Healthy"),
-      value: Math.max(totalProducts - lowStock, 0),
-      color: "#22c55e",
-    },
+    { name: t("Healthy"), value: healthyProducts, color: "#22c55e" },
     { name: t("Low Stock"), value: lowStock, color: "#f59e0b" },
     { name: t("Out of Stock"), value: outOfStock, color: "#ef4444" },
   ].filter((d) => d.value > 0);
@@ -251,23 +274,58 @@ export default function Reports({ dark, setDark, logout }) {
       />
 
       {/* MAIN */}
-      <main className="main-content">
-        {/* TOPBAR */}
-        <div className="topbar">
-          <h1>
-            <i className="fas fa-chart-line"></i> {t("Inventory Reports")}
-          </h1>
+      <main className="main-content reports-page">
+        <section className="reports-hero">
+          <div className="reports-hero-heading">
+            <span className="reports-hero-icon"><i className="fas fa-chart-line"></i></span>
+            <div>
+              <span className="reports-eyebrow">{t("Reports")}</span>
+              <h1>{t("Inventory Reports")}</h1>
+              <p>{t("Order activity uses the selected period; inventory stock shows the current balance.")}</p>
+            </div>
+          </div>
 
-          <div className="actions report-actions">
-            <label className="report-period-control">
-              <span>{t("Report period")}</span>
-              <select value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}>
-                <option value="daily">{t("Daily")}</option>
-                <option value="weekly">{t("Weekly")}</option>
-                <option value="monthly">{t("Monthly")}</option>
-                <option value="yearly">{t("Yearly")}</option>
-              </select>
-            </label>
+          <div className="reports-controls">
+            <div className="report-period-control" ref={periodControlRef}>
+              <span className="report-control-label">{t("Report period")}</span>
+              <button
+                type="button"
+                className={`report-period-trigger${periodMenuOpen ? " is-open" : ""}`}
+                aria-haspopup="listbox"
+                aria-expanded={periodMenuOpen}
+                aria-label={t("Report period")}
+                onClick={() => setPeriodMenuOpen((open) => !open)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setPeriodMenuOpen(true);
+                  }
+                }}
+              >
+                <span>{t(reportPeriod[0].toUpperCase() + reportPeriod.slice(1))}</span>
+                <i className={`fas fa-chevron-down${periodMenuOpen ? " is-open" : ""}`} aria-hidden="true"></i>
+              </button>
+              {periodMenuOpen && (
+                <div className="report-period-menu" role="listbox" aria-label={t("Report period")}>
+                  {["daily", "weekly", "monthly", "yearly"].map((period) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={reportPeriod === period}
+                      className={`report-period-option${reportPeriod === period ? " is-selected" : ""}`}
+                      key={period}
+                      onClick={() => {
+                        setReportPeriod(period);
+                        setPeriodMenuOpen(false);
+                      }}
+                    >
+                      <span>{t(period[0].toUpperCase() + period.slice(1))}</span>
+                      {reportPeriod === period && <i className="fas fa-check" aria-hidden="true"></i>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <fieldset className="print-section-options">
               <legend>{t("Print includes")}</legend>
               {[
@@ -284,7 +342,7 @@ export default function Reports({ dark, setDark, logout }) {
                       [key]: e.target.checked,
                     }))}
                   />
-                  {label}
+                  <span>{label}</span>
                 </label>
               ))}
             </fieldset>
@@ -292,53 +350,59 @@ export default function Reports({ dark, setDark, logout }) {
               <i className="fas fa-print"></i> {t("Print Ledger")}
             </button>
           </div>
-        </div>
-        <p className="report-period-note">{t("Order activity uses the selected period; inventory stock shows the current balance.")}</p>
+        </section>
 
         {/* ================= PRODUCT STATS ================= */}
-        <h3 style={{ marginTop: 10, marginBottom: 8 }}>
-          <i className="fas fa-boxes" style={{ color: "var(--accent)" }}></i>{" "}
-          {t("Product Overview")}
-        </h3>
+        <section className="reports-section">
+          <div className="reports-section-heading">
+            <div>
+              <span className="reports-section-kicker">{t("Inventory Reports")}</span>
+              <h2><i className="fas fa-boxes"></i> {t("Product Overview")}</h2>
+            </div>
+            <span className="reports-section-caption">{totalProducts} {t("Total Products")}</span>
+          </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <i className="fas fa-box"></i>
+        <div className="stats-grid reports-stats-grid">
+          <div className="stat-card modern-stat-card">
+            <span className="modern-stat-icon"><i className="fas fa-box"></i></span>
             <h2>{totalProducts}</h2>
             <p>{t("Total Products")}</p>
           </div>
 
-          <div className="stat-card">
-            <i className="fas fa-exclamation-triangle"></i>
+          <div className="stat-card modern-stat-card balance-stat">
+            <span className="modern-stat-icon"><i className="fas fa-exclamation-triangle"></i></span>
             <h2>{lowStock}</h2>
             <p>{t("Low Stock")}</p>
           </div>
 
-          <div className="stat-card">
-            <i className="fas fa-times-circle"></i>
+          <div className="stat-card modern-stat-card inactive-stat">
+            <span className="modern-stat-icon"><i className="fas fa-times-circle"></i></span>
             <h2>{outOfStock}</h2>
             <p>{t("Out of Stock")}</p>
           </div>
 
-          <div className="stat-card">
-            <i className="fas fa-coins"></i>
+          <div className="stat-card modern-stat-card income-stat">
+            <span className="modern-stat-icon"><i className="fas fa-coins"></i></span>
             <h2>{money(totalValue)}</h2>
             <p>{t("Total Value")}</p>
           </div>
 
-          <div className="stat-card">
-            <i className="fas fa-heartbeat"></i>
+          <div className="stat-card modern-stat-card active-stat">
+            <span className="modern-stat-icon"><i className="fas fa-heartbeat"></i></span>
             <h2>{stockHealth}%</h2>
             <p>{t("Stock Health")}</p>
           </div>
         </div>
 
         {/* PRODUCT CHARTS */}
-        <div className="stats-grid dashboard-charts">
-          <div className="table-card dashboard-chart-card">
-            <h3>
+        <div className="stats-grid dashboard-charts reports-charts">
+          <div className="table-card dashboard-chart-card report-chart-card">
+            <div className="modern-table-heading"><div>
+              <h3>
               <i className="fas fa-chart-bar"></i> {t("Stock Levels")}
-            </h3>
+              </h3>
+              <p>{t("Product Overview")}</p>
+            </div></div>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData} margin={{ top: 12, right: 8, left: -18, bottom: 8 }}>
                 <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="4 5" />
@@ -368,10 +432,13 @@ export default function Reports({ dark, setDark, logout }) {
             </ResponsiveContainer>
           </div>
 
-          <div className="table-card dashboard-chart-card">
-            <h3>
+          <div className="table-card dashboard-chart-card report-chart-card">
+            <div className="modern-table-heading"><div>
+              <h3>
               <i className="fas fa-chart-pie"></i> {t("Stock Distribution")}
-            </h3>
+              </h3>
+              <p>{t("Stock Health")}</p>
+            </div></div>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" innerRadius={52} outerRadius={82} paddingAngle={4} stroke="none">
@@ -387,10 +454,11 @@ export default function Reports({ dark, setDark, logout }) {
         </div>
 
         {/* PRODUCT TABLE */}
-        <div className="table-card">
-          <h3>
-            <i className="fas fa-table"></i> {t("Product Report")}
-          </h3>
+        <div className="table-card reports-table-card">
+          <div className="modern-table-heading">
+            <div><h3><i className="fas fa-table"></i> {t("Product Report")}</h3><p>{t("Current inventory balances")}</p></div>
+            <span className="modern-table-count">{products.length}</span>
+          </div>
           <table>
             <thead>
               <tr>
@@ -430,15 +498,15 @@ export default function Reports({ dark, setDark, logout }) {
                       <td>{money(price * stock)}</td>
                       <td>
                         {stock === 0 ? (
-                          <span style={{ color: "#ef4444" }}>
+                          <span className="report-status-pill report-status-out">
                             <i className="fas fa-times"></i> {t("Out")}
                           </span>
                         ) : stock <= 5 ? (
-                          <span style={{ color: "#f59e0b" }}>
+                          <span className="report-status-pill report-status-low">
                             <i className="fas fa-exclamation"></i> {t("Low")}
                           </span>
                         ) : (
-                          <span style={{ color: "#22c55e" }}>
+                          <span className="report-status-pill report-status-good">
                             <i className="fas fa-check"></i> {t("Available")}
                           </span>
                         )}
@@ -460,45 +528,54 @@ export default function Reports({ dark, setDark, logout }) {
         </div>
 
         {/* ================= ORDERS REPORT ================= */}
-        <h3 style={{ marginTop: 28, marginBottom: 8 }}>
-          <i className="fas fa-shopping-cart" style={{ color: "var(--accent)" }}></i>{" "}
-          {t("Orders Report")}
-        </h3>
+        </section>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <i className="fas fa-shopping-cart"></i>
+        <section className="reports-section">
+        <div className="reports-section-heading reports-orders-heading">
+          <div>
+            <span className="reports-section-kicker">{t("Report period")}: {t(reportPeriod[0].toUpperCase() + reportPeriod.slice(1))}</span>
+            <h2><i className="fas fa-shopping-cart"></i> {t("Orders Report")}</h2>
+          </div>
+          <span className="reports-section-caption">{totalOrders} {t("Total Orders")}</span>
+        </div>
+
+        <div className="stats-grid reports-stats-grid">
+          <div className="stat-card modern-stat-card">
+            <span className="modern-stat-icon"><i className="fas fa-shopping-cart"></i></span>
             <h2>{totalOrders}</h2>
             <p>{t("Total Orders")}</p>
           </div>
-          <div className="stat-card">
-            <i className="fas fa-clock"></i>
+          <div className="stat-card modern-stat-card balance-stat">
+            <span className="modern-stat-icon"><i className="fas fa-clock"></i></span>
             <h2>{pendingOrders}</h2>
             <p>{t("Pending")}</p>
           </div>
-          <div className="stat-card">
-            <i className="fas fa-check-circle"></i>
+          <div className="stat-card modern-stat-card income-stat">
+            <span className="modern-stat-icon"><i className="fas fa-check-circle"></i></span>
             <h2>{completedOrders}</h2>
             <p>{t("Completed")}</p>
           </div>
-          <div className="stat-card">
-            <i className="fas fa-exclamation-circle"></i>
+          <div className="stat-card modern-stat-card inactive-stat">
+            <span className="modern-stat-icon"><i className="fas fa-exclamation-circle"></i></span>
             <h2>{unpaidOrders}</h2>
             <p>{t("Unpaid")}</p>
           </div>
-          <div className="stat-card">
-            <i className="fas fa-money-bill-wave"></i>
+          <div className="stat-card modern-stat-card active-stat">
+            <span className="modern-stat-icon"><i className="fas fa-money-bill-wave"></i></span>
             <h2>{money(orderRevenue)}</h2>
             <p>{t("Revenue")}</p>
           </div>
         </div>
 
         {/* ORDER CHARTS */}
-        <div className="stats-grid dashboard-charts">
-          <div className="table-card dashboard-chart-card">
-            <h3>
+        <div className="stats-grid dashboard-charts reports-charts">
+          <div className="table-card dashboard-chart-card report-chart-card">
+            <div className="modern-table-heading"><div>
+              <h3>
               <i className="fas fa-chart-bar"></i> {t("Order Status Overview")}
-            </h3>
+              </h3>
+              <p>{t("Orders Report")}</p>
+            </div></div>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={orderBarData} margin={{ top: 12, right: 8, left: -18, bottom: 8 }}>
                 <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="4 5" />
@@ -518,10 +595,13 @@ export default function Reports({ dark, setDark, logout }) {
             </ResponsiveContainer>
           </div>
 
-          <div className="table-card dashboard-chart-card">
-            <h3>
+          <div className="table-card dashboard-chart-card report-chart-card">
+            <div className="modern-table-heading"><div>
+              <h3>
               <i className="fas fa-chart-pie"></i> {t("Order Distribution")}
-            </h3>
+              </h3>
+              <p>{t("Orders Report")}</p>
+            </div></div>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -544,10 +624,11 @@ export default function Reports({ dark, setDark, logout }) {
         </div>
 
         {/* ORDER TABLE */}
-        <div className="table-card">
-          <h3>
-            <i className="fas fa-receipt"></i> {t("Order Details")}
-          </h3>
+        <div className="table-card reports-table-card">
+          <div className="modern-table-heading">
+            <div><h3><i className="fas fa-receipt"></i> {t("Order Details")}</h3><p>{t("Orders Report")}</p></div>
+            <span className="modern-table-count">{reportOrders.length}</span>
+          </div>
           <table>
             <thead>
               <tr>
@@ -574,13 +655,7 @@ export default function Reports({ dark, setDark, logout }) {
                     <td>{o.quantity || 0}</td>
                     <td>{money(o.total || 0)}</td>
                     <td>
-                      <span
-                        style={{
-                          color:
-                            o.status === "Completed" ? "#22c55e" : "#f59e0b",
-                          fontWeight: 600,
-                        }}
-                      >
+                      <span className={`report-status-pill ${o.status === "Completed" ? "report-status-good" : "report-status-low"}`}>
                         {t(o.status || "Pending")}
                       </span>
                     </td>
@@ -599,6 +674,7 @@ export default function Reports({ dark, setDark, logout }) {
             t={t}
           />
         </div>
+        </section>
 
         {/* PRINTABLE LEDGER (products + orders) */}
         <div id="ledger-print" style={{ display: "none" }}>

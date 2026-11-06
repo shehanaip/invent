@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
 import Pagination from "../components/Pagination";
+import AppSelect from "../components/AppSelect";
 import { usePreferences } from "../context/usePreferences";
 import { formatCurrency, formatDate } from "../utils/preferences";
 import { translate } from "../utils/translations";
@@ -674,14 +675,14 @@ export default function Orders({ dark, setDark }) {
                 </label>
                 <label className="modal-field order-field-wide" htmlFor="order-store">
                   <span>{t("Store / Branch")}</span>
-                  <select id="order-store" name="storeId" value={form.storeId} onChange={handleChange}>
+                  <AppSelect id="order-store" name="storeId" value={form.storeId} onChange={handleChange}>
                     <option value="">{stores.length ? t("Select store or branch") : t("General inventory")}</option>
                     {stores.map((store) => (
                       <option key={store._id} value={store._id}>
                         {store.groupName ? `${store.groupName} / ` : ""}{store.name}
                       </option>
                     ))}
-                  </select>
+                  </AppSelect>
                   {products.some((product) => product.stockByStore?.length) && !form.storeId && (
                     <small className="form-field-hint">{t("Select a branch to sell products assigned to branch stock.")}</small>
                   )}
@@ -731,12 +732,13 @@ export default function Orders({ dark, setDark }) {
                       <div className="order-line-item" key={`order-item-${index}`}>
                         <label className="modal-field">
                           <span>{t("Product")}</span>
-                          <select
+                          <AppSelect
                             value={item.productId}
-                            onChange={(e) => {
-                              const product = products.find((entry) => entry._id === e.target.value);
+                            ariaLabel={t("Product")}
+                            onChange={({ target }) => {
+                              const product = products.find((entry) => entry._id === target.value);
                               updateLineItem(index, {
-                                productId: e.target.value,
+                                productId: target.value,
                                 barcode: product?.barcodes?.[0] || product?.barcode || "",
                               });
                             }}
@@ -755,7 +757,7 @@ export default function Orders({ dark, setDark }) {
                                 </option>
                               );
                             })}
-                          </select>
+                          </AppSelect>
                         </label>
                         <label className="modal-field">
                           <span>{t("Barcode")}</span>

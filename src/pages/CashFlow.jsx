@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import Pagination from "../components/Pagination";
 import { usePreferences } from "../context/usePreferences";
 import { formatCurrency, formatDate } from "../utils/preferences";
@@ -350,10 +351,10 @@ export default function CashFlow({ dark, setDark, logout }) {
               <div className="compact-form-grid">
                 <label className="compact-form-field compact-field-wide" htmlFor="transaction-type">
                   <span>{t("Type")}</span>
-                  <select id="transaction-type" name="type" value={form.type} onChange={handleChange}>
+                  <AppSelect id="transaction-type" name="type" value={form.type} onChange={handleChange}>
                     <option value="Income">{t("Income")}</option>
                     <option value="Expense">{t("Expense")}</option>
-                  </select>
+                  </AppSelect>
                 </label>
 
                 <label className="compact-form-field" htmlFor="transaction-source">

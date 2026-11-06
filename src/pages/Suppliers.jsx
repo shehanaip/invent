@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import Pagination from "../components/Pagination";
 import { usePreferences } from "../context/usePreferences";
 import { translate } from "../utils/translations";
@@ -286,14 +287,15 @@ export default function Suppliers({ dark, setDark }) {
                 onChange={handleChange}
               />
 
-              <select
+              <AppSelect
                 name="status"
                 value={form.status}
                 onChange={handleChange}
+                ariaLabel={t("Status")}
               >
                 <option>Active</option>
                 <option>Inactive</option>
-              </select>
+              </AppSelect>
 
               <div className="modal-actions">
                 <button

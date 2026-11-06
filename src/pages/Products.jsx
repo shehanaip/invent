@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../api";
 import Sidebar from "../components/Sidebar";
 import Pagination from "../components/Pagination";
+import AppSelect from "../components/AppSelect";
 import { usePreferences } from "../context/usePreferences";
 import { formatCurrency } from "../utils/preferences";
 import { translate } from "../utils/translations";
@@ -532,13 +533,13 @@ pricePerUnit: p.pricePerUnit || "",
                 </label>
                 <label className="modal-field" htmlFor="product-unit">
                   <span>{t("Unit")}</span>
-                  <select id="product-unit" name="unitType" value={form.unitType} onChange={handleChange}>
+                  <AppSelect id="product-unit" name="unitType" value={form.unitType} onChange={handleChange}>
                     <option value="piece">{t("Piece")}</option>
                     <option value="kg">{t("KG")}</option>
                     <option value="gram">{t("Gram")}</option>
                     <option value="liter">{t("Liter")}</option>
                     <option value="ml">{t("ML")}</option>
-                  </select>
+                  </AppSelect>
                 </label>
                 <label className="modal-field" htmlFor="product-min-unit">
                   <span>{t("Min Sell Unit")}</span>

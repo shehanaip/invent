@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import AppSelect from "../components/AppSelect";
 import ThemeToggle from "../components/ThemeToggle";
 import { usePreferences } from "../context/usePreferences";
 import { formatDateTime } from "../utils/preferences";
@@ -154,7 +155,8 @@ export default function Settings({ dark, setDark, logout }) {
           <div className="settings-card">
             <h3><i className="fas fa-dollar-sign"></i> {t("Billing")}</h3>
 
-            <select
+            <AppSelect
+              ariaLabel={t("Currency")}
               name="currency"
               value={settings.currency}
               onChange={handleChange}
@@ -162,7 +164,7 @@ export default function Settings({ dark, setDark, logout }) {
               <option value="BDT">BDT</option>
               <option value="USD">USD</option>
               <option value="INR">INR</option>
-            </select>
+            </AppSelect>
 
             <input
               name="tax"
@@ -198,7 +200,7 @@ export default function Settings({ dark, setDark, logout }) {
             <h3><i className="fas fa-globe"></i> {t("System")}</h3>
 
             <label htmlFor="settings-language">{t("Language")}</label>
-            <select
+            <AppSelect
               id="settings-language"
               name="language"
               value={settings.language}
@@ -207,10 +209,10 @@ export default function Settings({ dark, setDark, logout }) {
               <option>English</option>
               <option>বাংলা</option>
               <option>Hindi</option>
-            </select>
+            </AppSelect>
 
             <label htmlFor="settings-timezone">{t("Timezone")}</label>
-            <select
+            <AppSelect
               id="settings-timezone"
               name="timezone"
               value={settings.timezone}
@@ -219,7 +221,7 @@ export default function Settings({ dark, setDark, logout }) {
               <option>Asia/Dhaka</option>
               <option>UTC</option>
               <option>Asia/Kolkata</option>
-            </select>
+            </AppSelect>
             <p className="settings-help">{t("Current time")}: {formatDateTime(now, settings)}</p>
             <p className="settings-help">{t("This screen uses the selected timezone.")}</p>
           </div>
